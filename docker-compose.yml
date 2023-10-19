@@ -1,0 +1,48 @@
+version: "3.9"
+services:
+  rabbit:
+    image: rabbitmq:3-management
+    user: rabbitmq
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    healthcheck:
+      test: rabbitmq-diagnostics check_port_connectivity
+      interval: 1s
+      timeout: 30s
+      retries: 60
+
+  sbemulator:
+    image: devopsifyme/sbemu:latest
+    build:
+      x-bake:
+        platforms:
+          - "linux/arm64"
+          - "linux/amd64"
+      tags:
+        - "devopsifyme/sbemu:latest"
+        - "devopsifyme/sbemu:${TAG:-0.0.1-local}"
+        - "devopsifyme/sbemu:${TAGMAJOR:-0}"
+        - "devopsifyme/sbemu:${TAGMAJORMINOR:-0.0}"
+        - "devopsifyme/sbemu:${TAGMAJORMINORPATCH:-0.0.1}"
+      context: .
+      dockerfile: ./src/ServiceBusEmulator.Host/Dockerfile
+    environment:
+      - EMULATOR__RABBITMQ__HOST=rabbit
+      - EMULATOR__RABBITMQ__USERNAME=guest
+      - EMULATOR__RABBITMQ__PASSWORD=guest
+      - Emulator__QueuesAndTopics=test-queue;test-topic/Subscriptions/test-sub1;test-topic/Subscriptions/test-sub2
+    ports:
+      - "5671:5671"
+    links:
+      - rabbit
+    depends_on:
+      rabbit:
+        condition: service_healthy
+
+  k6:
+    build: .
+    environment:
+      CONNECTION_STRING: Endpoint=sb://sbemulator/;SharedAccessKeyName=all;SharedAccessKey=CLwo3FQ3S39Z4pFOQDefaiUd1dSsli4XOAj3Y9Uh1E=;EnableAmqpLinkRedirect=false
+    depends_on:
+      - sbemulator
