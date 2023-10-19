@@ -5,4 +5,12 @@ compile:
 	xk6 build --with xk6-azservicebus=.
 
 test/run:
-	./k6 run tests/test.js
+	./k6 run examples/queue_batch_message.js
+	./k6 run examples/queue_batch_string_message.js
+	./k6 run examples/queue_single_message.js
+	./k6 run examples/queue_single_string_message.js
+	./k6 run examples/topic_batch_message.js
+	./k6 run examples/topic_batch_string_message.js
+	./k6 run examples/topic_single_message.js
+	./k6 run examples/topic_single_string_message.js
+
