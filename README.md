@@ -171,35 +171,6 @@ Once you have finished using the receiver, you should close it using the `close(
 receiver.close();
 ```
 
-```go
-type ReceivedMessage struct {
-	ApplicationProperties      map[string]string `js:"applicationProperties"`
-	Body                       []byte            `js:"body"`
-	BodyAsString               string            `js:"bodyAsString"`
-	ContentType                string            `js:"contentType"`
-	CorrelationID              string            `js:"correlationID"`
-	DeadLetterErrorDescription string            `js:"deadLetterErrorDescription"`
-	DeadLetterReason           string            `js:"deadLetterReason"`
-	DeadLetterSource           string            `js:"deadLetterSource"`
-	DeliveryCount              uint32            `js:"deliveryCount"`
-	EnqueuedSequenceNumber     int64             `js:"enqueuedSequenceNumber"`
-	EnqueuedTime               time.Time         `js:"enqueuedTime"`
-	ExpiresAt                  time.Time         `js:"expiresAt"`
-	LockedUntil                time.Time         `js:"lockedUntil"`
-	MessageID                  string            `js:"messageID"`
-	PartitionKey               string            `js:"partitionKey"`
-	ReplyTo                    string            `js:"replyTo"`
-	ReplyToSessionID           string            `js:"replyToSessionID"`
-	ScheduledEnqueueTime       time.Time         `js:"scheduledEnqueueTime"`
-	SequenceNumber             int64             `js:"sequenceNumber"`
-	SessionID                  string            `js:"sessionID"`
-	State                      MessageState      `js:"state"`
-	Subject                    string            `js:"subject"`
-	TimeToLive                 time.Duration     `js:"timeToLive"`
-	To                         string            `js:"to"`
-}
-```
-
 And the `ReceivedMessage` object has the following attributes:
 
 | Attribute | Description |
