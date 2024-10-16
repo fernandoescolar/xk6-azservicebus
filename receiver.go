@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/messaging/azservicebus"
-	"github.com/dop251/goja"
+	"github.com/grafana/sobek"
 	"go.k6.io/k6/js/common"
 	"go.k6.io/k6/js/modules"
 )
@@ -52,7 +52,7 @@ type ReceivedMessage struct {
 	To                         string            `js:"to"`
 }
 
-func (sb *ServiceBus) CreateQueueReceiver(queue string) *goja.Object {
+func (sb *ServiceBus) CreateQueueReceiver(queue string) *sobek.Object {
 	rt := sb.vu.Runtime()
 	receiver, err := sb.cli.NewReceiverForQueue(queue, nil)
 	if err != nil {
@@ -66,7 +66,7 @@ func (sb *ServiceBus) CreateQueueReceiver(queue string) *goja.Object {
 	}).ToObject(rt)
 }
 
-func (sb *ServiceBus) CreateSubscriptionReceiver(topic, subscription string) *goja.Object {
+func (sb *ServiceBus) CreateSubscriptionReceiver(topic, subscription string) *sobek.Object {
 	rt := sb.vu.Runtime()
 	receiver, err := sb.cli.NewReceiverForSubscription(topic, subscription, nil)
 	if err != nil {
@@ -108,20 +108,22 @@ func (r *Receiver) GetMessage() *ReceivedMessage {
 func (r *Receiver) GetMessages(count int) []*ReceivedMessage {
 	ctx, cancel := r.createContext()
 	defer cancel()
-	messages, err := r.receiver.ReceiveMessages(ctx, count, nil)
-	if err != nil {
-		common.Throw(r.vu.Runtime(), fmt.Errorf("AzServicebus cannot receive messages: %w", err))
-	}
-
 	var receivedMessages []*ReceivedMessage
-	for _, m := range messages {
-		receivedMessages = append(receivedMessages, mapServiceBusMessageToReceivedMessage(m))
-	}
-
-	for _, m := range messages {
-		err = r.receiver.CompleteMessage(ctx, m, nil)
+	for len(receivedMessages) < count {
+		messages, err := r.receiver.ReceiveMessages(ctx, count-len(receivedMessages), nil)
 		if err != nil {
-			common.Throw(r.vu.Runtime(), fmt.Errorf("AzServicebus cannot complete message: %w", err))
+			common.Throw(r.vu.Runtime(), fmt.Errorf("AzServicebus cannot receive messages: %w", err))
+		}
+
+		for _, m := range messages {
+			receivedMessages = append(receivedMessages, mapServiceBusMessageToReceivedMessage(m))
+		}
+
+		for _, m := range messages {
+			err = r.receiver.CompleteMessage(ctx, m, nil)
+			if err != nil {
+				common.Throw(r.vu.Runtime(), fmt.Errorf("AzServicebus cannot complete message: %w", err))
+			}
 		}
 	}
 

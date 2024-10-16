@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/messaging/azservicebus"
-	"github.com/dop251/goja"
+	"github.com/grafana/sobek"
 	"go.k6.io/k6/js/common"
 	"go.k6.io/k6/js/modules"
 )
@@ -31,7 +31,7 @@ type ServiceBus struct {
 // Configuration represents the configuration for the module.
 type Configuration struct {
 	ConnectionString   string `js:"connectionString"`
-	Timeout            int    `js:"timeout"`
+	Timeout            int64  `js:"timeout"`
 	InsecureSkipVerify bool   `js:"insecureSkipVerify"`
 }
 
@@ -62,7 +62,7 @@ func (sb *ServiceBus) Exports() modules.Exports {
 	}
 }
 
-func (sb *ServiceBus) client(c goja.ConstructorCall) *goja.Object {
+func (sb *ServiceBus) client(c sobek.ConstructorCall) *sobek.Object {
 	rt := sb.vu.Runtime()
 
 	var cfg Configuration
@@ -84,7 +84,7 @@ func (sb *ServiceBus) client(c goja.ConstructorCall) *goja.Object {
 	}
 
 	return rt.ToValue(&ServiceBus{
-		timeout: time.Duration(cfg.Timeout) * time.Second,
+		timeout: time.Duration(cfg.Timeout) * time.Millisecond,
 		vu:      sb.vu,
 		cli:     client,
 	}).ToObject(rt)

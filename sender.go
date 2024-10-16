@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/messaging/azservicebus"
-	"github.com/dop251/goja"
+	"github.com/grafana/sobek"
 	"go.k6.io/k6/js/common"
 	"go.k6.io/k6/js/modules"
 )
@@ -31,7 +31,7 @@ type Message struct {
 	To                    string            `js:"to"`
 }
 
-func (sb *ServiceBus) CreateSender(queueOrTopic string) *goja.Object {
+func (sb *ServiceBus) CreateSender(queueOrTopic string) *sobek.Object {
 	rt := sb.vu.Runtime()
 	if sb.cli == nil {
 		common.Throw(rt, fmt.Errorf("AzServicebus connection should not be nil"))
@@ -81,10 +81,10 @@ func (s *Sender) SendMessage(message *Message) {
 
 func (s *Sender) SendBatch(messages []string) {
 	rt := s.vu.Runtime()
-	ctx1, cancel1 := s.createContext()
+	ctx, cancel1 := s.createContext()
 	defer cancel1()
 
-	batch, err := s.sender.NewMessageBatch(ctx1, nil)
+	batch, err := s.sender.NewMessageBatch(ctx, nil)
 	if err != nil {
 		common.Throw(rt, fmt.Errorf("AzServicebus cannot create batch: %w", err))
 	}
@@ -95,19 +95,17 @@ func (s *Sender) SendBatch(messages []string) {
 		}
 	}
 
-	ctx2, cancel2 := s.createContext()
-	defer cancel2()
-	if err := s.sender.SendMessageBatch(ctx2, batch, nil); err != nil {
+	if err := s.sender.SendMessageBatch(ctx, batch, nil); err != nil {
 		common.Throw(rt, fmt.Errorf("AzServicebus cannot send batch: %w", err))
 	}
 }
 
 func (s *Sender) SendBatchMessages(messages []*Message) {
 	rt := s.vu.Runtime()
-	ctx1, cancel1 := s.createContext()
+	ctx, cancel1 := s.createContext()
 	defer cancel1()
 
-	batch, err := s.sender.NewMessageBatch(ctx1, nil)
+	batch, err := s.sender.NewMessageBatch(ctx, nil)
 	if err != nil {
 		common.Throw(rt, fmt.Errorf("AzServicebus cannot create batch: %w", err))
 	}
@@ -118,18 +116,16 @@ func (s *Sender) SendBatchMessages(messages []*Message) {
 		}
 	}
 
-	ctx2, cancel2 := s.createContext()
-	defer cancel2()
-	if err := s.sender.SendMessageBatch(ctx2, batch, nil); err != nil {
+	if err := s.sender.SendMessageBatch(ctx, batch, nil); err != nil {
 		common.Throw(rt, fmt.Errorf("AzServicebus cannot send batch: %w", err))
 	}
 }
 
 func (s *Sender) createContext() (context.Context, context.CancelFunc) {
-	// if s.timeout > 0 {
-	// 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
-	// 	return ctx, cancel
-	// }
+	if s.timeout > 0 {
+		ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
+		return ctx, cancel
+	}
 
 	return context.Background(), func() {}
 }
@@ -181,5 +177,6 @@ func mapMessageToSeriveBus(message *Message) *azservicebus.Message {
 	if message.To != "" {
 		sbMessage.To = &message.To
 	}
+
 	return sbMessage
 }
