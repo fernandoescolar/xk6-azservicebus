@@ -133,6 +133,7 @@ func (s *Sender) createContext() (context.Context, context.CancelFunc) {
 func mapMessageToSeriveBus(message *Message) *azservicebus.Message {
 	sbMessage := &azservicebus.Message{}
 	if message.ApplicationProperties != nil {
+		sbMessage.ApplicationProperties = make(map[string]any)
 		for k, v := range message.ApplicationProperties {
 			sbMessage.ApplicationProperties[k] = v
 		}
